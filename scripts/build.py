@@ -101,7 +101,7 @@ def main():
             (helper / "Info.plist").write_bytes(plistlib.dumps({"CFBundleExecutable":name,
                 "CFBundleIdentifier":"org.pragtical.webbrowser.host.helper" + identifier,
                 "CFBundleName":name, "CFBundlePackageType":"APPL", "LSUIElement":True,
-                "LSMinimumSystemVersion":"13.0", "CFBundleVersion":"0.1.0",
+                "LSMinimumSystemVersion":"13.0", "CFBundleVersion":"0.2.0",
                 "LSEnvironment":{"MallocNanoZone":"0"}}))
         run(["codesign", "--force", "--deep", "--sign", "-", app])
     else:

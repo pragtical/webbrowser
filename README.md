@@ -18,12 +18,30 @@ Windows x86_64 (MSVC), and macOS Intel/Apple Silicon. macOS requires 13 or newer
 
 ## Use
 
-Run **Web Browser: Open** from the command palette, or **Tools → Open Web Browser**.
+Run **Web Browser: Open** from the command palette, or
+**Tools → Web Browser → Open Browser**.
 Enter a URL in the address field and press Enter or Go.
 
+Right-click an `.html`, `.htm` or `.xhtml` file in TreeView and choose
+**Open with Web Browser** to preview it in a new browser tab.
+
+For an open HTML document, run **Web Browser: Preview HTML**, choose
+**Tools → Web Browser → Preview HTML**, or right-click the document and select
+**Preview HTML**.
+This previews the current buffer, including unsaved edits.
+**Settings → Plugins → Web Browser → Preview Mode** selects Right (default),
+New Tab, Bottom, Top or Left. Lua configuration uses
+`config.plugins.webbrowser.preview_mode` with `right`, `newtab`, `bottom`, `top`
+or `left`.
+Open preview tabs refresh automatically whenever you save the source document,
+including after **Save As**, without switching away from the source.
+Relative CSS, scripts and images resolve from the document's directory (the
+project directory for an untitled HTML document).
+
 **Web Browser: Open App** prompts for a website and opens a new tab with the toolbar
-and status strip hidden. **Web Browser: Toggle Controls** (also in the View menu)
-shows or hides those controls. Ctrl+L reveals the address field when needed.
+and status strip hidden. **Web Browser: Toggle Controls** (also under
+**Tools → Web Browser**) shows or hides those controls. Ctrl+L reveals the address
+field when needed.
 
 Right-click a page for navigation, editing, link/image actions and **Inspect
 Element**. **F12** toggles Developer Tools inside the browser tab. Use its header

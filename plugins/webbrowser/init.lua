@@ -5,6 +5,8 @@ local common = require "core.common"
 local command = require "core.command"
 local config = require "core.config"
 local ContextMenu = require "core.contextmenu"
+local Doc = require "core.doc"
+local DocView = require "core.docview"
 local ime = require "core.ime"
 local keymap = require "core.keymap"
 local style = require "core.style"
@@ -16,9 +18,14 @@ local system = require "system"
 
 config.plugins.webbrowser = common.merge({
   home = "https://pragtical.dev", runtime_path = "", disable_sandbox = false,
+  preview_mode = "right",
   config_spec = {
     name = "Web Browser",
     {label="Home Page", path="home", type="string", default="https://pragtical.dev"},
+    {label="Preview Mode", path="preview_mode", type="selection", default="right",
+      description="Where to open HTML previews relative to their source document.",
+      values={{"Right", "right"}, {"New Tab", "newtab"}, {"Bottom", "bottom"},
+        {"Top", "top"}, {"Left", "left"}}},
     {label="Runtime Directory", path="runtime_path", type="string", default="",
       description="CEF runtime directory; empty uses the runtime bundled with the plugin. Restart to change."},
     {label="Disable Sandbox", path="disable_sandbox", type="toggle", default=false,
@@ -29,6 +36,7 @@ config.plugins.webbrowser = common.merge({
 local runtime = require "plugins.webbrowser.runtime"
 ---@class plugins.webbrowser.view : widget
 local BrowserView = Widget:extend()
+local previews = setmetatable({}, {__mode="k"})
 local webbrowser
 local buttons = {left=0, middle=1, right=2}
 local cursors = {arrow=true, ibeam=true, hand=true, sizeh=true, sizev=true}
@@ -42,15 +50,24 @@ local function flags(view)
   return value
 end
 
+local html_extensions = {html=true, htm=true, xhtml=true}
+local function is_html(filename)
+  return html_extensions[(filename:match("%.([^./\\]+)$") or ""):lower()]
+end
+
+local function file_url(path)
+  path = path:gsub("\\", "/")
+  if path:sub(1,1) ~= "/" then path = "/" .. path end
+  return "file://" .. path:gsub("[^%w/%.~_:%-]", function(c) return string.format("%%%02X", c:byte()) end)
+end
+
 local function normalize_url(url)
   url = (url or ""):match("^%s*(.-)%s*$")
   if url == "" then return "about:blank" end
   if url:match("^[%a][%w+.-]*:") and not url:match("^%a:[/\\]") then return url end
   local path = common.home_expand(url)
   if system.get_file_info(path) then
-    path = system.absolute_path(path):gsub("\\", "/")
-    if path:sub(1,1) ~= "/" then path = "/" .. path end
-    return "file://" .. path:gsub("[^%w/%.~_:%-]", function(c) return string.format("%%%02X", c:byte()) end)
+    return file_url(system.absolute_path(path))
   end
   return "https://" .. url
 end
@@ -553,6 +570,7 @@ function BrowserView:on_ime_text_editing(text, start, length)
 end
 ---Release browser resources; the caller still owns the view's placement.
 function BrowserView:close()
+  previews[self] = nil
   self:release_mouse()
   self:hide_devtools()
   if self.context_menu then self.context_menu:hide(); self.context_menu = nil end
@@ -601,6 +619,63 @@ command.add(nil, {
     })
   end
 })
+local function html_document()
+  local view = core.active_view
+  if not view:extends(DocView) then return false end
+  local doc = view.doc
+  return is_html(doc:get_name()) or doc.syntax and doc.syntax.name == "HTML", doc
+end
+local function preview_options(doc)
+  return {
+    name="Preview: " .. common.basename(doc:get_name()),
+    base_url=file_url(doc.abs_filename or core.project_absolute_path(doc:get_name()))
+  }
+end
+local function refresh_previews(doc)
+  local html, options
+  for view, source in pairs(previews) do
+    if source == doc and view.browser then
+      html = html or doc:get_text(1, 1, math.huge, math.huge)
+      options = options or preview_options(doc)
+      if view:load_html(html, options.base_url) then
+        view.fixed_name, view.name = options.name, options.name
+      else
+        core.warn("Web Browser: could not queue HTML preview refresh for %s", doc:get_name())
+      end
+    end
+  end
+end
+local doc_save = Doc.save
+function Doc:save(...)
+  local result = table.pack(doc_save(self, ...))
+  if not self.new_file then core.try(refresh_previews, self) end
+  return table.unpack(result)
+end
+command.add(html_document, {
+  ["web-browser:preview-html"] = function(doc)
+    local node = core.root_view.root_node:get_node_for_view(core.active_view)
+      or core.root_view:get_active_node_default()
+    local options = preview_options(doc)
+    options.html = doc:get_text(1, 1, math.huge, math.huge)
+    local view = BrowserView(nil, options)
+    local mode = config.plugins.webbrowser.preview_mode
+    if mode == "newtab" then
+      node:add_view(view)
+    else
+      local directions = {right="right", left="left", top="up", bottom="down"}
+      node:split(directions[mode] or "right", view)
+    end
+    core.root_view.root_node:update_layout()
+    previews[view] = doc
+  end
+})
+if config.plugins.contextmenu ~= false then
+  local menu = require "plugins.contextmenu"
+  menu:register(html_document, {
+    menu.DIVIDER,
+    {text="Preview HTML", command="web-browser:preview-html"}
+  })
+end
 command.add(function() local v=current(); return v ~= nil and core.active_view == v, v end, {
   ["web-browser:copy-selection"] = function(v) v:copy_selection() end,
 })
@@ -623,15 +698,33 @@ keymap.add {
   ["f12"]="web-browser:toggle-devtools"
 }
 if core.menu_view then core.menu_view:register({"tools"}, {
-  {id="web-browser", text="Open Web Browser", command="web-browser:open"},
-  {id="web-app", text="Open Website as App…", command="web-browser:open-app"}
+  {id="web-browser", text="Web Browser", items={
+    {id="open", text="Open Browser", command="web-browser:open"},
+    {id="open-app", text="Open Website as App…", command="web-browser:open-app"},
+    {id="preview-html", text="Preview HTML", command="web-browser:preview-html"},
+    ContextMenu.DIVIDER,
+    {id="controls", text="Web Browser Controls", command="web-browser:toggle-controls",
+      checked=function() local view=current(); return view and view.controls_visible or false end},
+    {id="devtools", text="Web Browser Developer Tools", command="web-browser:toggle-devtools",
+      checked=function() local view=current(); return view and (view.devtools_owner or view).devtools ~= nil or false end}
+  }}
 }, "webbrowser") end
-if core.menu_view then core.menu_view:register({"view"}, {
-  {id="web-browser-controls", text="Web Browser Controls", command="web-browser:toggle-controls",
-    checked=function() local view=current(); return view and view.controls_visible or false end},
-  {id="web-browser-devtools", text="Web Browser Developer Tools", command="web-browser:toggle-devtools",
-    checked=function() local view=current(); return view and (view.devtools_owner or view).devtools ~= nil or false end}
-}, "webbrowser-controls") end
+
+if config.plugins.treeview ~= false then
+  local treeview = require "plugins.treeview"
+  local function html_item()
+    local item = treeview:get_context_item()
+    return item and item.type == "file"
+      and is_html(item.abs_filename)
+      and (core.active_view == treeview or treeview.contextmenu.show_context_menu), item
+  end
+  treeview.contextmenu:register(html_item, {
+    {text="Open with Web Browser", command="treeview:open-with-web-browser"}
+  })
+  command.add(html_item, {
+    ["treeview:open-with-web-browser"] = function(item) webbrowser.open(item.abs_filename) end
+  })
+end
 
 local keys = {backspace=8, tab=9, ["return"]=13, enter=13, escape=27, space=32,
   pageup=33, pagedown=34, ["end"]=35, home=36, left=37, up=38, right=39, down=40,

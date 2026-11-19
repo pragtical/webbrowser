@@ -1,4 +1,4 @@
-project('pragtical-webbrowser', 'cpp', version: '0.1.0', meson_version: '>=0.61.0',
+project('pragtical-webbrowser', 'cpp', version: '0.2.0', meson_version: '>=0.61.0',
   default_options: ['cpp_std=c++20', 'buildtype=release', 'b_ndebug=true', 'b_vscrt=mt'])
 
 cpp = meson.get_compiler('cpp')

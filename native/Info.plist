@@ -5,7 +5,7 @@
   <key>CFBundleIdentifier</key><string>org.pragtical.webbrowser.host</string>
   <key>CFBundleName</key><string>WebBrowserHost</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>0.1.0</string>
+  <key>CFBundleVersion</key><string>0.2.0</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSEnvironment</key><dict><key>MallocNanoZone</key><string>0</string></dict>
   <key>LSUIElement</key><true/>

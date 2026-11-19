@@ -4,7 +4,7 @@
       "id": "webbrowser",
       "name": "Web Browser",
       "description": "CEF browser tabs rendered inside Pragtical with native input and navigation.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mod_version": "3.14.0",
       "type": "plugin",
       "path": "plugins/webbrowser",
@@ -12,27 +12,27 @@
       "files": [
         {
           "arch": "x86_64-linux",
-          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.1.0/webbrowser.x86_64-linux.tar.gz",
+          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.2.0/webbrowser.x86_64-linux.tar.gz",
           "checksum": "SKIP"
         },
         {
           "arch": "aarch64-linux",
-          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.1.0/webbrowser.aarch64-linux.tar.gz",
+          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.2.0/webbrowser.aarch64-linux.tar.gz",
           "checksum": "SKIP"
         },
         {
           "arch": "x86_64-darwin",
-          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.1.0/webbrowser.x86_64-darwin.tar.gz",
+          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.2.0/webbrowser.x86_64-darwin.tar.gz",
           "checksum": "SKIP"
         },
         {
           "arch": "aarch64-darwin",
-          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.1.0/webbrowser.aarch64-darwin.tar.gz",
+          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.2.0/webbrowser.aarch64-darwin.tar.gz",
           "checksum": "SKIP"
         },
         {
           "arch": "x86_64-windows",
-          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.1.0/webbrowser.x86_64-windows.zip",
+          "url": "https://github.com/pragtical/webbrowser/releases/download/v0.2.0/webbrowser.x86_64-windows.zip",
           "checksum": "SKIP"
         }
       ]
